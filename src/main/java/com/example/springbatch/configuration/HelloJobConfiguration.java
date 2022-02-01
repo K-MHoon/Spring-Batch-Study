@@ -1,5 +1,6 @@
 package com.example.springbatch.configuration;
 
+import com.example.springbatch.tasklet.CustomTasklet;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobParameters;
@@ -39,6 +40,7 @@ public class HelloJobConfiguration {
                         System.out.println(" ==========================");
                         System.out.println(" >> step2 was executed");
                         System.out.println(" ==========================");
+//                        throw new RuntimeException("step2 was failed");
                         return RepeatStatus.FINISHED;
                     }
                 }).build();
@@ -47,23 +49,6 @@ public class HelloJobConfiguration {
     @Bean
     public Step helloStep1() {
         return stepBuilderFactory.get("helloStep1")
-                .tasklet(new Tasklet() {
-                    @Override
-                    public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
-
-                        JobParameters jobParameters = stepContribution.getStepExecution().getJobExecution().getJobParameters();
-                        jobParameters.getString("name");
-                        jobParameters.getLong("seq");
-                        jobParameters.getDate("date");
-                        jobParameters.getDouble("age");
-
-                        Map<String, Object> jobParameters1 = chunkContext.getStepContext().getJobParameters();
-
-                        System.out.println(" ==========================");
-                        System.out.println(" >> Hello Spring Batch!!");
-                        System.out.println(" ==========================");
-                        return RepeatStatus.FINISHED;
-                    }
-                }).build();
+                .tasklet(new CustomTasklet()).build();
     }
 }

@@ -30,6 +30,6 @@ spring:
       driver-class-name: com.mysql.cj.jdbc.Driver
   batch:
     jdbc:
-      initialize-schema: always #??? ?? always, ??? ?? never
+      initialize-schema: always # 개발에는 always, 운영에는 never
     job:
-      enabled: false
+      enabled: true
