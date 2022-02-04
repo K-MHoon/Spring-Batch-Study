@@ -32,4 +32,4 @@ spring:
     jdbc:
       initialize-schema: always # 개발에는 always, 운영에는 never
     job:
-      enabled: true
+      enabled: false

@@ -30,6 +30,9 @@ public class ExecutionContextTasklet1 implements Tasklet {
         System.out.println("jobName : " + jobExecutionContext.get("jobName"));
         System.out.println("stepName : " + stepExecutionContext.get("stepName"));
 
+        // 비동기 테스트를 위한 3초 타임
+        Thread.sleep(3000);
+
         return RepeatStatus.FINISHED;
     }
 }

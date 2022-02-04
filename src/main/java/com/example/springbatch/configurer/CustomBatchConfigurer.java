@@ -20,17 +20,17 @@ public class CustomBatchConfigurer extends BasicBatchConfigurer {
         this.dataSource = dataSource;
     }
 
-    @Override
-    protected JobRepository createJobRepository() throws Exception {
-
-        JobRepositoryFactoryBean factory = new JobRepositoryFactoryBean();
-        factory.setDataSource(dataSource);
-        factory.setTransactionManager(getTransactionManager());
-        // 기본은 최고 수준
-        factory.setIsolationLevelForCreate("ISOLATION_READ_COMMITTED");
-        // 테이블 명도 SYSTEM_ 으로 실행해야 오류가 나지 않는다.
-        factory.setTablePrefix("SYSTEM_");
-
-        return factory.getObject();
-    }
+//    @Override
+//    protected JobRepository createJobRepository() throws Exception {
+//
+//        JobRepositoryFactoryBean factory = new JobRepositoryFactoryBean();
+//        factory.setDataSource(dataSource);
+//        factory.setTransactionManager(getTransactionManager());
+//        // 기본은 최고 수준
+//        factory.setIsolationLevelForCreate("ISOLATION_READ_COMMITTED");
+//        // 테이블 명도 SYSTEM_ 으로 실행해야 오류가 나지 않는다.
+//        factory.setTablePrefix("SYSTEM_");
+//
+//        return factory.getObject();
+//    }
 }
