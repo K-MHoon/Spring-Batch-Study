@@ -1,5 +1,6 @@
 package com.example.springbatch.configuration;
 
+import com.example.springbatch.increment.CustomJobParametersIncrementer;
 import com.example.springbatch.validator.CustomJobParametersValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
@@ -8,6 +9,7 @@ import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.job.DefaultJobParametersValidator;
+import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
@@ -26,8 +28,10 @@ public class ValidateConfiguration {
         return this.jobBuilderFactory.get("validateJob")
                 .start(validateStep1())
                 .next(validateStep2())
-//                .validator(new CustomJobParametersValidator())
-                .validator(new DefaultJobParametersValidator(new String[]{"name","date"}, new String[]{"count"}))
+                .validator(new CustomJobParametersValidator())
+//                .validator(new DefaultJobParametersValidator(new String[]{"name","date"}, new String[]{"count"}))
+//                .preventRestart()
+                .incrementer(new CustomJobParametersIncrementer())
                 .build();
     }
 
@@ -51,6 +55,7 @@ public class ValidateConfiguration {
                     @Override
                     public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
                         System.out.println("validate Step2 was executed");
+//                        throw new RuntimeException("validate Step2 was failed");
                         return RepeatStatus.FINISHED;
                     }
                 })
