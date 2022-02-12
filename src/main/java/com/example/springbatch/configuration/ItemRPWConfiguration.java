@@ -3,6 +3,8 @@ package com.example.springbatch.configuration;
 import com.example.springbatch.dto.Customer;
 import com.example.springbatch.processor.CustomItemProcessor;
 import com.example.springbatch.reader.CustomItemReader;
+import com.example.springbatch.reader.CustomItemStreamReader;
+import com.example.springbatch.reader.CustomItemStreamWriter;
 import com.example.springbatch.writer.CustomItemWriter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
@@ -19,7 +21,9 @@ import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 @RequiredArgsConstructor
 @Configuration
@@ -31,7 +35,7 @@ public class ItemRPWConfiguration {
     @Bean
     public Job itemRPWJob() {
         return jobBuilderFactory.get("itemRPWJob")
-                .start(itemRPWStep1())
+                .start(itemRPWStep3())
                 .next(itemRPWStep2())
                 .build();
     }
@@ -60,6 +64,21 @@ public class ItemRPWConfiguration {
     }
 
     @Bean
+    public Step itemRPWStep3() {
+        return stepBuilderFactory.get("itemRPWStep3")
+                .<Customer, Customer>chunk(3)
+                .reader(customItemStreamReader())
+                .writer(customItemStreamWriter())
+                .build();
+    }
+
+    @Bean
+    public ItemWriter<? super Customer> customItemStreamWriter() {
+        return new CustomItemStreamWriter();
+    }
+
+
+    @Bean
     public ItemWriter<? super Customer> customItemWriter() {
         return new CustomItemWriter();
     }
@@ -74,6 +93,17 @@ public class ItemRPWConfiguration {
         return new CustomItemReader(Arrays.asList(new Customer("user1"),
                 new Customer("user2"),
                 new Customer("user3")));
+    }
+
+    @Bean
+    public CustomItemStreamReader customItemStreamReader() {
+        List<Customer> items = new ArrayList<>(10);
+
+        for(int i = 0; i <= 10; i++) {
+            items.add(new Customer("user" + (i+1)));
+        }
+
+        return new CustomItemStreamReader(items);
     }
 
 
