@@ -18,10 +18,12 @@ import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
+import org.springframework.batch.item.file.transform.Range;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.FileSystemResource;
 
 import java.util.List;
 
@@ -44,7 +46,7 @@ public class FlatFileConfiguration {
     public Step flatFileStep1() {
         return stepBuilderFactory.get("flatFileStep1")
                 .chunk(5)
-                .reader(flatFileItemReaderByBuilderV2())
+                .reader(flatFileItemReaderByFixedLength())
                 .writer(new ItemWriter() {
                     @Override
                     public void write(List list) throws Exception {
@@ -93,6 +95,22 @@ public class FlatFileConfiguration {
                 .linesToSkip(1)
                 .delimited().delimiter(",")
                 .names("name", "age", "year")
+                .build();
+    }
+
+    @Bean
+    public ItemReader flatFileItemReaderByFixedLength() {
+        return new FlatFileItemReaderBuilder<Customer2>()
+                .name("flatFile")
+                .resource(new ClassPathResource("/customer.txt"))
+                .fieldSetMapper(new BeanWrapperFieldSetMapper<>())
+                .targetType(Customer2.class)
+                .linesToSkip(1)
+                .fixedLength()
+                .addColumns(new Range(1, 5))
+                .addColumns(new Range(6, 9))
+                .addColumns(new Range(10, 11))
+                .names("name","year","age")
                 .build();
     }
 
