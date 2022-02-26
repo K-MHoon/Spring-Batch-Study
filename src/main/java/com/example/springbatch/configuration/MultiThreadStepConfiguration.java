@@ -1,6 +1,9 @@
 package com.example.springbatch.configuration;
 
 import com.example.springbatch.dto.Customer4;
+import com.example.springbatch.listener.MultiThreadCustomItemProcessListener;
+import com.example.springbatch.listener.MultiThreadCustomItemReadListener;
+import com.example.springbatch.listener.MultiThreadCustomItemWriteListener;
 import com.example.springbatch.listener.StopWatchJobListener;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
@@ -11,8 +14,6 @@ import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
-import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
-import org.springframework.batch.item.database.JdbcBatchItemWriter;
 import org.springframework.batch.item.database.Order;
 import org.springframework.batch.item.database.PagingQueryProvider;
 import org.springframework.batch.item.database.builder.JdbcBatchItemWriterBuilder;

@@ -1,4 +1,4 @@
-package com.example.springbatch.configuration;
+package com.example.springbatch.listener;
 
 import com.example.springbatch.dto.Customer4;
 import org.springframework.batch.core.ItemProcessListener;
