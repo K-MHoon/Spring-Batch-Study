@@ -40,11 +40,11 @@ public class JpaItemWriteConfiguration {
     private final EntityManagerFactory entityManagerFactory;
     private int chunkSize = 10;
 
-    @Bean
-    @Qualifier("jpaTrx")
-    public PlatformTransactionManager jpaTransactionManager() {
-        return new JpaTransactionManager(entityManagerFactory);
-    }
+//    @Bean
+//    @Qualifier("jpaTrx")
+//    public PlatformTransactionManager jpaTransactionManager() {
+//        return new JpaTransactionManager(entityManagerFactory);
+//    }
 
     @Bean
     public Job jpaItemWriteJob() {
@@ -57,7 +57,7 @@ public class JpaItemWriteConfiguration {
     @Bean
     public Step jpaItemWriteStep1() {
         return stepBuilderFactory.get("jpaItemWriteStep1")
-                .transactionManager(jpaTransactionManager())
+//                .transactionManager(jpaTransactionManager())
                 .<Customer4, Customer5> chunk(chunkSize)
                 .reader(jpaItemWriteReader())
                 .processor(jpaItemWriteProcessor())
