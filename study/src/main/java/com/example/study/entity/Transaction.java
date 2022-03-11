@@ -17,11 +17,15 @@ public class Transaction {
     private Long id;
 
     @Column
-    private String accountNumber;
-
-    @Column
     private Date timestamp;
 
     @Column
+    private String accountNumber;
+
+    @Column
     private double amount;
+
+    @ManyToOne
+    @JoinColumn(name = "account_summary_id")
+    private AccountSummary accountSummary;
 }

@@ -16,7 +16,7 @@ public class TransactionItemProcessor implements ItemProcessor<AccountSummary, A
 
     @Override
     public AccountSummary process(AccountSummary item) throws Exception {
-        List<Transaction> transactions = transactionRepository.findByAccountNumber(item.getAccountNumber());
+        List<Transaction> transactions = transactionRepository.getTransactionsByAccountNumber(item.getAccountNumber());
         transactions.forEach(t -> item.setCurrentBalance(item.getCurrentBalance() + t.getAmount()));
         return item;
     }

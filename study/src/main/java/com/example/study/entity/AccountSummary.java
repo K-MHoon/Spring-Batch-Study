@@ -20,4 +20,5 @@ public class AccountSummary {
 
     @Column
     private Double currentBalance;
+
 }
