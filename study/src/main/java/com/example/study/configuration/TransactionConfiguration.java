@@ -81,6 +81,7 @@ public class TransactionConfiguration {
     @JobScope
     public Step importTransactionFileStep() {
         return stepBuilderFactory.get("importTransactionFileStep")
+                .startLimit(2)
                 .<Transaction, Transaction>chunk(100)
                 .reader(transactionItemReader())
                 .writer(transactionItemWriter())
@@ -171,15 +172,25 @@ public class TransactionConfiguration {
                 .build();
     }
 
+//    @Bean
+//    public Job transactionJob() {
+//        return jobBuilderFactory.get("transactionJob")
+//                .incrementer(new RunIdIncrementer())
+//                .start(importTransactionFileStep())
+//                .on("STOPPED").stopAndRestart(importTransactionFileStep())
+//                .from(importTransactionFileStep()).on("*").to(applyTransactionStep())
+//                .from(applyTransactionStep()).next(generateAccountSummaryStep())
+//                .end()
+//                .build();
+//    }
+
     @Bean
     public Job transactionJob() {
         return jobBuilderFactory.get("transactionJob")
-                .incrementer(new RunIdIncrementer())
+                .preventRestart()
                 .start(importTransactionFileStep())
-                .on("STOPPED").stopAndRestart(importTransactionFileStep())
-                .from(importTransactionFileStep()).on("*").to(applyTransactionStep())
-                .from(applyTransactionStep()).next(generateAccountSummaryStep())
-                .end()
+                .next(applyTransactionStep())
+                .next(generateAccountSummaryStep())
                 .build();
     }
 }
