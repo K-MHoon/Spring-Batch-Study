@@ -12,7 +12,7 @@ import java.util.Date;
 @Table(name = "tbl_transaction")
 public class Transaction {
 
-    @Id @GeneratedValue
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
     private Long id;
 
