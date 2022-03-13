@@ -7,6 +7,7 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepScope;
+import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
@@ -15,7 +16,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
+import org.springframework.core.io.FileSystemResource;
 
 @Configuration
 @RequiredArgsConstructor
@@ -27,16 +28,17 @@ public class FlatFileItemConfiguration {
     @Bean
     public Job flatFileItemJob() {
         return jobBuilderFactory.get("flatFileItemJob")
+                .incrementer(new RunIdIncrementer())
                 .start(copyFileStep())
                 .build();
     }
 
     @Bean
     @StepScope
-    public FlatFileItemReader<MyCustomer> customerFlatFileItemReader(
+    public FlatFileItemReader<MyCustomer> customerFlatFileItemReaderByFixedLength(
             @Value("#{jobParameters['customerFile']}") ClassPathResource inputFile) {
         return new FlatFileItemReaderBuilder<MyCustomer>()
-                .name("customerFlatFileItemReader")
+                .name("customerFlatFileItemReaderByFixedLength")
                 .resource(inputFile)
                 .fixedLength()
                 .addColumns(new Range(1, 11))
@@ -56,6 +58,21 @@ public class FlatFileItemConfiguration {
     }
 
     @Bean
+    @StepScope
+    public FlatFileItemReader<MyCustomer> customerFlatFileItemReaderByDelimit(
+            @Value("#{jobParameters['customerFile']}") FileSystemResource inputFile) {
+        return new FlatFileItemReaderBuilder<MyCustomer>()
+                .name("customerFlatFileItemReaderByDelimit")
+                .delimited().delimiter(",")
+                .names("firstName", "middleInitial", "lastName",
+                        "addressNumber" , "street" ,
+                        "city" , "state", "zipCode")
+                .targetType(MyCustomer.class)
+                .resource(inputFile)
+                .build();
+    }
+
+    @Bean
     public ItemWriter<MyCustomer> customerFlatFileItemWriter() {
         return (items) -> items.forEach(System.out::println);
     }
@@ -64,7 +81,8 @@ public class FlatFileItemConfiguration {
     public Step copyFileStep() {
         return stepBuilderFactory.get("copyFileStep")
                 .<MyCustomer, MyCustomer>chunk(10)
-                .reader(customerFlatFileItemReader(null))
+//                .reader(customerFlatFileItemReaderByFixedLength(null))
+                .reader(customerFlatFileItemReaderByDelimit(null))
                 .writer(customerFlatFileItemWriter())
                 .build();
     }
