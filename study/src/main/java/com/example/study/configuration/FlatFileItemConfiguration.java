@@ -1,6 +1,8 @@
 package com.example.study.configuration;
 
 import com.example.study.dto.MyCustomer;
+import com.example.study.dto.MyCustomer2;
+import com.example.study.tokenizer.CustomFlatFileLineTokenizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -29,7 +31,8 @@ public class FlatFileItemConfiguration {
     public Job flatFileItemJob() {
         return jobBuilderFactory.get("flatFileItemJob")
                 .incrementer(new RunIdIncrementer())
-                .start(copyFileStep())
+//                .start(copyFileStep())
+                .start(copyFileStep2())
                 .build();
     }
 
@@ -71,9 +74,25 @@ public class FlatFileItemConfiguration {
                 .resource(inputFile)
                 .build();
     }
+    @Bean
+    @StepScope
+    public FlatFileItemReader<MyCustomer2> customerFlatFileItemReaderByDelimitAndCustom(
+            @Value("#{jobParameters['customerFile']}") FileSystemResource inputFile) {
+        return new FlatFileItemReaderBuilder<MyCustomer2>()
+                .name("customerFlatFileItemReaderByDelimitAndCustom")
+                .lineTokenizer(new CustomFlatFileLineTokenizer())
+                .targetType(MyCustomer2.class)
+                .resource(inputFile)
+                .build();
+    }
 
     @Bean
     public ItemWriter<MyCustomer> customerFlatFileItemWriter() {
+        return (items) -> items.forEach(System.out::println);
+    }
+
+    @Bean
+    public ItemWriter<MyCustomer2> customerFlatFileItemWriter2() {
         return (items) -> items.forEach(System.out::println);
     }
 
@@ -84,6 +103,16 @@ public class FlatFileItemConfiguration {
 //                .reader(customerFlatFileItemReaderByFixedLength(null))
                 .reader(customerFlatFileItemReaderByDelimit(null))
                 .writer(customerFlatFileItemWriter())
+                .build();
+    }
+
+    @Bean
+    public Step copyFileStep2() {
+        return stepBuilderFactory.get("copyFileStep2")
+                .<MyCustomer2, MyCustomer2>chunk(10)
+//                .reader(customerFlatFileItemReaderByFixedLength(null))
+                .reader(customerFlatFileItemReaderByDelimitAndCustom(null))
+                .writer(customerFlatFileItemWriter2())
                 .build();
     }
 }
