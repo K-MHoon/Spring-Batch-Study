@@ -2,7 +2,9 @@ package com.example.study.configuration;
 
 import com.example.study.dto.MyCustomer;
 import com.example.study.dto.MyCustomer2;
+import com.example.study.dto.MyCustomer3;
 import com.example.study.mapper.Transaction2FieldSetMapper;
+import com.example.study.reader.CustomerFileReader;
 import com.example.study.tokenizer.CustomFlatFileLineTokenizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
@@ -41,7 +43,8 @@ public class FlatFileItemConfiguration {
         return jobBuilderFactory.get("flatFileItemJob")
                 .incrementer(new RunIdIncrementer())
 //                .start(copyFileStep())
-                .start(copyFileStep2())
+//                .start(copyFileStep2())
+                .start(copyFileStep3())
                 .build();
     }
 
@@ -107,6 +110,17 @@ public class FlatFileItemConfiguration {
     }
 
     @Bean
+    @StepScope
+    public FlatFileItemReader customerFlatFileItemReaderByPattern2(
+            @Value("#{jobParameters['customerFile']}") FileSystemResource inputFile) {
+        return new FlatFileItemReaderBuilder<MyCustomer3>()
+                .name("customerFlatFileItemReaderByPattern2")
+                .lineMapper(patternMatchingLineTokenizer2())
+                .resource(inputFile)
+                .build();
+    }
+
+    @Bean
     public PatternMatchingCompositeLineMapper patternMatchingLineTokenizer() {
         Map<String, LineTokenizer> lineTokenizerMap = new HashMap<>();
         lineTokenizerMap.put("CUST*", customerLineTokenizer());
@@ -116,6 +130,28 @@ public class FlatFileItemConfiguration {
 
         BeanWrapperFieldSetMapper<MyCustomer2> customerFieldSetMapper = new BeanWrapperFieldSetMapper<>();
         customerFieldSetMapper.setTargetType(MyCustomer2.class);
+
+        fieldSetMapperMap.put("CUST*", customerFieldSetMapper);
+        fieldSetMapperMap.put("TRANS*", new Transaction2FieldSetMapper());
+
+        PatternMatchingCompositeLineMapper lineMapper = new PatternMatchingCompositeLineMapper();
+
+        lineMapper.setTokenizers(lineTokenizerMap);
+        lineMapper.setFieldSetMappers(fieldSetMapperMap);
+
+        return lineMapper;
+    }
+
+    @Bean
+    public PatternMatchingCompositeLineMapper patternMatchingLineTokenizer2() {
+        Map<String, LineTokenizer> lineTokenizerMap = new HashMap<>();
+        lineTokenizerMap.put("CUST*", customerLineTokenizer());
+        lineTokenizerMap.put("TRANS*", transactionLineTokenizer());
+
+        Map<String, FieldSetMapper> fieldSetMapperMap = new HashMap<>();
+
+        BeanWrapperFieldSetMapper<MyCustomer3> customerFieldSetMapper = new BeanWrapperFieldSetMapper<>();
+        customerFieldSetMapper.setTargetType(MyCustomer3.class);
 
         fieldSetMapperMap.put("CUST*", customerFieldSetMapper);
         fieldSetMapperMap.put("TRANS*", new Transaction2FieldSetMapper());
@@ -157,6 +193,11 @@ public class FlatFileItemConfiguration {
     }
 
     @Bean
+    public CustomerFileReader customerFileReader() {
+        return new CustomerFileReader(customerFlatFileItemReaderByPattern2(null));
+    }
+
+    @Bean
     public ItemWriter customerFlatFileItemWriter2() {
         return (items) -> items.forEach(System.out::println);
     }
@@ -178,6 +219,15 @@ public class FlatFileItemConfiguration {
 //                .reader(customerFlatFileItemReaderByFixedLength(null))
 //                .reader(customerFlatFileItemReaderByDelimitAndCustom(null))
                 .reader(customerFlatFileItemReaderByPattern(null))
+                .writer(customerFlatFileItemWriter2())
+                .build();
+    }
+
+    @Bean
+    public Step copyFileStep3() {
+        return stepBuilderFactory.get("copyFileStep3")
+                .<MyCustomer3, MyCustomer3>chunk(10)
+                .reader(customerFileReader())
                 .writer(customerFlatFileItemWriter2())
                 .build();
     }
