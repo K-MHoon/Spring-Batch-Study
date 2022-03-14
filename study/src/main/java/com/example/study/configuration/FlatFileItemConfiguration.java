@@ -2,6 +2,7 @@ package com.example.study.configuration;
 
 import com.example.study.dto.MyCustomer;
 import com.example.study.dto.MyCustomer2;
+import com.example.study.mapper.Transaction2FieldSetMapper;
 import com.example.study.tokenizer.CustomFlatFileLineTokenizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
@@ -13,12 +14,20 @@ import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
+import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
+import org.springframework.batch.item.file.mapping.FieldSetMapper;
+import org.springframework.batch.item.file.mapping.PatternMatchingCompositeLineMapper;
+import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
+import org.springframework.batch.item.file.transform.LineTokenizer;
 import org.springframework.batch.item.file.transform.Range;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 @RequiredArgsConstructor
@@ -87,12 +96,68 @@ public class FlatFileItemConfiguration {
     }
 
     @Bean
+    @StepScope
+    public FlatFileItemReader customerFlatFileItemReaderByPattern(
+            @Value("#{jobParameters['customerFile']}") FileSystemResource inputFile) {
+        return new FlatFileItemReaderBuilder<MyCustomer2>()
+                .name("customerFlatFileItemReaderByPattern")
+                .lineMapper(patternMatchingLineTokenizer())
+                .resource(inputFile)
+                .build();
+    }
+
+    @Bean
+    public PatternMatchingCompositeLineMapper patternMatchingLineTokenizer() {
+        Map<String, LineTokenizer> lineTokenizerMap = new HashMap<>();
+        lineTokenizerMap.put("CUST*", customerLineTokenizer());
+        lineTokenizerMap.put("TRANS*", transactionLineTokenizer());
+
+        Map<String, FieldSetMapper> fieldSetMapperMap = new HashMap<>();
+
+        BeanWrapperFieldSetMapper<MyCustomer2> customerFieldSetMapper = new BeanWrapperFieldSetMapper<>();
+        customerFieldSetMapper.setTargetType(MyCustomer2.class);
+
+        fieldSetMapperMap.put("CUST*", customerFieldSetMapper);
+        fieldSetMapperMap.put("TRANS*", new Transaction2FieldSetMapper());
+
+        PatternMatchingCompositeLineMapper lineMapper = new PatternMatchingCompositeLineMapper();
+
+        lineMapper.setTokenizers(lineTokenizerMap);
+        lineMapper.setFieldSetMappers(fieldSetMapperMap);
+
+        return lineMapper;
+    }
+
+    @Bean
+    public DelimitedLineTokenizer transactionLineTokenizer() {
+        DelimitedLineTokenizer lineTokenizer = new DelimitedLineTokenizer();
+        lineTokenizer.setNames("prefix", "accountNumber", "transactionDate", "amount");
+        return lineTokenizer;
+    }
+
+    @Bean
+    public DelimitedLineTokenizer customerLineTokenizer() {
+        DelimitedLineTokenizer lineTokenizer = new DelimitedLineTokenizer();
+        lineTokenizer.setNames("firstName",
+        "middleInitial",
+        "lastName",
+        "address",
+        "city",
+        "state",
+        "zipCode");
+
+        lineTokenizer.setIncludedFields(1,2,3,4,5,6,7);
+
+        return lineTokenizer;
+    }
+
+    @Bean
     public ItemWriter<MyCustomer> customerFlatFileItemWriter() {
         return (items) -> items.forEach(System.out::println);
     }
 
     @Bean
-    public ItemWriter<MyCustomer2> customerFlatFileItemWriter2() {
+    public ItemWriter customerFlatFileItemWriter2() {
         return (items) -> items.forEach(System.out::println);
     }
 
@@ -111,7 +176,8 @@ public class FlatFileItemConfiguration {
         return stepBuilderFactory.get("copyFileStep2")
                 .<MyCustomer2, MyCustomer2>chunk(10)
 //                .reader(customerFlatFileItemReaderByFixedLength(null))
-                .reader(customerFlatFileItemReaderByDelimitAndCustom(null))
+//                .reader(customerFlatFileItemReaderByDelimitAndCustom(null))
+                .reader(customerFlatFileItemReaderByPattern(null))
                 .writer(customerFlatFileItemWriter2())
                 .build();
     }
