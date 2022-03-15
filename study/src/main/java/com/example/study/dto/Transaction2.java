@@ -2,11 +2,13 @@ package com.example.study.dto;
 
 import lombok.Data;
 
+import javax.xml.bind.annotation.XmlType;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 @Data
+@XmlType(name = "transaction")
 public class Transaction2 {
 
     private String accountNumber;
