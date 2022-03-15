@@ -5,6 +5,7 @@ import com.example.study.dto.MyCustomer2;
 import com.example.study.dto.MyCustomer3;
 import com.example.study.mapper.Transaction2FieldSetMapper;
 import com.example.study.reader.CustomerFileReader;
+import com.example.study.reader.CustomerFileReader2;
 import com.example.study.tokenizer.CustomFlatFileLineTokenizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
@@ -15,7 +16,9 @@ import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.file.FlatFileItemReader;
+import org.springframework.batch.item.file.MultiResourceItemReader;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
+import org.springframework.batch.item.file.builder.MultiResourceItemReaderBuilder;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.file.mapping.FieldSetMapper;
 import org.springframework.batch.item.file.mapping.PatternMatchingCompositeLineMapper;
@@ -165,6 +168,27 @@ public class FlatFileItemConfiguration {
     }
 
     @Bean
+    @StepScope
+    public MultiResourceItemReader multiResourceItemReader(
+            @Value("#{jobParameters['customerFile']}") FileSystemResource[] inputFiles) {
+        return new MultiResourceItemReaderBuilder<>()
+                .name("multiResourceItemReader")
+                .resources(inputFiles)
+                .delegate(customerFileReader2())
+                .build();
+    }
+
+    @Bean
+    @StepScope
+    public FlatFileItemReader customerFlatFileItemReaderByPattern3() {
+        return new FlatFileItemReaderBuilder<MyCustomer3>()
+                .name("customerFlatFileItemReaderByPattern3")
+                .lineMapper(patternMatchingLineTokenizer2())
+                .build();
+    }
+
+
+    @Bean
     public DelimitedLineTokenizer transactionLineTokenizer() {
         DelimitedLineTokenizer lineTokenizer = new DelimitedLineTokenizer();
         lineTokenizer.setNames("prefix", "accountNumber", "transactionDate", "amount");
@@ -198,6 +222,11 @@ public class FlatFileItemConfiguration {
     }
 
     @Bean
+    public CustomerFileReader2 customerFileReader2() {
+        return new CustomerFileReader2(customerFlatFileItemReaderByPattern3());
+    }
+
+    @Bean
     public ItemWriter customerFlatFileItemWriter2() {
         return (items) -> items.forEach(System.out::println);
     }
@@ -227,7 +256,8 @@ public class FlatFileItemConfiguration {
     public Step copyFileStep3() {
         return stepBuilderFactory.get("copyFileStep3")
                 .<MyCustomer3, MyCustomer3>chunk(10)
-                .reader(customerFileReader())
+//                .reader(customerFileReader())
+                .reader(multiResourceItemReader(null))
                 .writer(customerFlatFileItemWriter2())
                 .build();
     }
