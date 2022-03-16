@@ -7,12 +7,15 @@ import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.batch.item.database.builder.JdbcCursorItemReaderBuilder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.ArgumentPreparedStatementSetter;
 
 import javax.sql.DataSource;
 
@@ -30,8 +33,17 @@ public class JdbcItemConfiguration {
                 .name("jdbcItemCursorReader")
                 .beanRowMapper(MyCustomer4.class)
                 .dataSource(dataSource)
-                .sql("select * from tbl_customer")
+                .sql("select * from tbl_customer where city = ?")
+                .preparedStatementSetter(citySetter(null))
                 .build();
+    }
+
+    @Bean
+    @StepScope
+    public ArgumentPreparedStatementSetter citySetter(
+            @Value("#{jobParameters['city']}") String city
+    ) {
+        return new ArgumentPreparedStatementSetter(new Object[]{city});
     }
 
     @Bean
