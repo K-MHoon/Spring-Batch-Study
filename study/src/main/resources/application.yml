@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: local
+    active: mysql
 
 ---
 spring:
@@ -28,6 +28,7 @@ spring:
       username: root
       password: root
       driver-class-name: org.mariadb.jdbc.Driver
+
   batch:
     jdbc:
       initialize-schema: always # 개발에는 always, 운영에는 never
@@ -36,6 +37,10 @@ spring:
       enabled: true
   jpa:
     hibernate:
+      naming:
+        # 언더스코어 기법이아닌 카멜케이스를 사용하기 때문에 수정해야 한다.
+        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
       ddl-auto: none
     database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
     show-sql: true
