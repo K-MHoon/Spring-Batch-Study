@@ -11,7 +11,9 @@ import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.HibernateCursorItemReader;
+import org.springframework.batch.item.database.HibernatePagingItemReader;
 import org.springframework.batch.item.database.builder.HibernateCursorItemReaderBuilder;
+import org.springframework.batch.item.database.builder.HibernatePagingItemReaderBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -39,7 +41,7 @@ public class HibernateJpaItemConfiguration {
     public Step hibernateJpaItemStep() throws Exception {
         return stepBuilderFactory.get("hibernateJpaItemStep")
                 .<MyCustomer5, MyCustomer5>chunk(10)
-                .reader(hibernateCursorItemReader(null))
+                .reader(hibernatePagingItemReader(null))
                 .writer(hibernateJpaItemWriter())
                 .build();
     }
@@ -58,6 +60,20 @@ public class HibernateJpaItemConfiguration {
                 .sessionFactory(entityManagerFactory.unwrap(SessionFactory.class))
                 .queryString("from Customer where city = :city")
                 .parameterValues(Collections.singletonMap("city", city))
+                .build();
+    }
+
+    @Bean
+    @StepScope
+    public HibernatePagingItemReader<MyCustomer5> hibernatePagingItemReader(
+            @Value("#{jobParameters['city']}") String city
+    ) {
+        return new HibernatePagingItemReaderBuilder<MyCustomer5>()
+                .name("hibernatePagingItemReader")
+                .sessionFactory(entityManagerFactory.unwrap(SessionFactory.class))
+                .queryString("from Customer where city = :city")
+                .parameterValues(Collections.singletonMap("city", city))
+                .pageSize(10)
                 .build();
     }
 }
