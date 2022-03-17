@@ -12,8 +12,10 @@ import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.HibernateCursorItemReader;
 import org.springframework.batch.item.database.HibernatePagingItemReader;
+import org.springframework.batch.item.database.JpaPagingItemReader;
 import org.springframework.batch.item.database.builder.HibernateCursorItemReaderBuilder;
 import org.springframework.batch.item.database.builder.HibernatePagingItemReaderBuilder;
+import org.springframework.batch.item.database.builder.JpaPagingItemReaderBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -41,7 +43,7 @@ public class HibernateJpaItemConfiguration {
     public Step hibernateJpaItemStep() throws Exception {
         return stepBuilderFactory.get("hibernateJpaItemStep")
                 .<MyCustomer5, MyCustomer5>chunk(10)
-                .reader(hibernatePagingItemReader(null))
+                .reader(hibernateJpaPagingItemReader(null))
                 .writer(hibernateJpaItemWriter())
                 .build();
     }
@@ -74,6 +76,17 @@ public class HibernateJpaItemConfiguration {
                 .queryString("from Customer where city = :city")
                 .parameterValues(Collections.singletonMap("city", city))
                 .pageSize(10)
+                .build();
+    }
+
+    @Bean
+    @StepScope
+    public JpaPagingItemReader<MyCustomer5> hibernateJpaPagingItemReader(@Value("#{jobParameters['city']}") String city) {
+        return new JpaPagingItemReaderBuilder<MyCustomer5>()
+                .name("hibernateJpaPagingItemReader")
+                .parameterValues(Collections.singletonMap("city", city))
+                .entityManagerFactory(entityManagerFactory)
+                .queryString("select c from Customer c where c.city = :city")
                 .build();
     }
 }
