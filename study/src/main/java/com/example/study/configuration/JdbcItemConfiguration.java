@@ -12,15 +12,20 @@ import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.batch.item.database.JdbcPagingItemReader;
 import org.springframework.batch.item.database.PagingQueryProvider;
+import org.springframework.batch.item.database.StoredProcedureItemReader;
 import org.springframework.batch.item.database.builder.JdbcCursorItemReaderBuilder;
 import org.springframework.batch.item.database.builder.JdbcPagingItemReaderBuilder;
+import org.springframework.batch.item.database.builder.StoredProcedureItemReaderBuilder;
 import org.springframework.batch.item.database.support.SqlPagingQueryProviderFactoryBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.ArgumentPreparedStatementSetter;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.SqlParameter;
 
 import javax.sql.DataSource;
+import java.sql.Types;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -64,8 +69,21 @@ public class JdbcItemConfiguration {
         return stepBuilderFactory.get("jdbcItemCursorStep")
                 .<MyCustomer4, MyCustomer4>chunk(10)
 //                .reader(jdbcItemCursorReader())
-                .reader(jdbcItemPagingReader(null))
+//                .reader(jdbcItemPagingReader(null))
+                .reader(storedItemCursorReader())
                 .writer(jdbcItemCursorWriter())
+                .build();
+    }
+
+    @Bean
+    public StoredProcedureItemReader<MyCustomer4> storedItemCursorReader() {
+        return new StoredProcedureItemReaderBuilder<MyCustomer4>()
+                .name("storedItemCursorReader")
+                .dataSource(dataSource)
+                .procedureName("customer_list")
+                .parameters(new SqlParameter[]{new SqlParameter("cityOption", Types.VARCHAR)})
+                .preparedStatementSetter(citySetter(null))
+                .rowMapper(new BeanPropertyRowMapper<>(MyCustomer4.class))
                 .build();
     }
 
