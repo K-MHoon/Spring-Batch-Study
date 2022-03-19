@@ -22,6 +22,9 @@ spring:
   config:
     activate:
       on-profile: mysql
+  data:
+    mongodb:
+      database: tweets
   datasource:
     hikari:
       jdbc-url: jdbc:mariadb://localhost:3307/springbatch?useUnicode=true&characterEncoding=utf8
