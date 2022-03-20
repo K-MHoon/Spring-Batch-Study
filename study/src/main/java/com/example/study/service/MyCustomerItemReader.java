@@ -1,6 +1,7 @@
 package com.example.study.service;
 
 import com.example.study.dto.MyCustomer5;
+import org.springframework.batch.item.*;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -8,9 +9,10 @@ import java.util.List;
 import java.util.Random;
 
 @Service
-public class MyCustomerService {
+public class MyCustomerItemReader extends ItemStreamSupport implements ItemReader<MyCustomer5> {
 
     private List<MyCustomer5> customers;
+    private String INDEX_KEY = "current.index.customers";
     private int curIndex;
 
     private String[] firstNames = {"Michael", "Warren", "Ann", "Terrence", "Erica", "Laura", "Steve", "Larry"};
@@ -22,7 +24,7 @@ public class MyCustomerService {
 
     private Random generator = new Random();
 
-    public MyCustomerService() {
+    public MyCustomerItemReader() {
         curIndex = 0;
 
         customers = new ArrayList<>();
@@ -30,6 +32,31 @@ public class MyCustomerService {
         for (int i = 0; i < 100; i++) {
             customers.add(buildCustomer());
         }
+    }
+
+    @Override
+    public void close() {
+        super.close();
+    }
+
+    @Override
+    public void open(ExecutionContext executionContext) {
+        if(executionContext.containsKey(getExecutionContextKey(INDEX_KEY))) {
+            int index = executionContext.getInt(getExecutionContextKey(INDEX_KEY));
+
+            if(index == 50) {
+                curIndex = 51;
+            } else {
+                curIndex = index;
+            }
+        } else {
+            curIndex = 0;
+        }
+    }
+
+    @Override
+    public void update(ExecutionContext executionContext) {
+        executionContext.putInt(getExecutionContextKey(INDEX_KEY), curIndex);
     }
 
     private MyCustomer5 buildCustomer() {
@@ -47,8 +74,13 @@ public class MyCustomerService {
         return customer;
     }
 
-    public MyCustomer5 getCustomer() {
+    @Override
+    public MyCustomer5 read() throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
         MyCustomer5 cust = null;
+
+        if(curIndex == 50) {
+            throw new RuntimeException("This will end your execution");
+        }
 
         if(curIndex < customers.size()) {
             cust = customers.get(curIndex);

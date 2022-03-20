@@ -1,24 +1,17 @@
 package com.example.study.configuration;
 
 import com.example.study.dto.MyCustomer5;
-import com.example.study.repository.MyCustomerRepository;
-import com.example.study.service.MyCustomerService;
+import com.example.study.service.MyCustomerItemReader;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
-import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.adapter.ItemReaderAdapter;
-import org.springframework.batch.item.data.RepositoryItemReader;
-import org.springframework.batch.item.data.builder.RepositoryItemReaderBuilder;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.domain.Sort;
-
-import java.util.Collections;
 
 @Configuration
 @RequiredArgsConstructor
@@ -26,7 +19,6 @@ public class AdapterConfiguration {
 
     private final JobBuilderFactory jobBuilderFactory;
     private final StepBuilderFactory stepBuilderFactory;
-    private final MyCustomerService customerService;
 
     @Bean
     public Job adapterJob() {
@@ -46,12 +38,9 @@ public class AdapterConfiguration {
     }
 
     @Bean
-    public ItemReaderAdapter<MyCustomer5> adapterItemReader() {
-        ItemReaderAdapter<MyCustomer5> adapter = new ItemReaderAdapter<>();
-
-        adapter.setTargetObject(customerService);
-        adapter.setTargetMethod("getCustomer");
-
-        return adapter;
+    public ItemReader adapterItemReader() {
+        MyCustomerItemReader myCustomerItemReader = new MyCustomerItemReader();
+        myCustomerItemReader.setName("adapterItemReader");
+        return myCustomerItemReader;
     }
 }
