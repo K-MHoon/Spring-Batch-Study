@@ -3,6 +3,7 @@ package com.example.study.configuration;
 import com.example.study.dto.MyCustomer;
 import com.example.study.dto.MyCustomer2;
 import com.example.study.dto.MyCustomer3;
+import com.example.study.listener.MyCustomerItemListener;
 import com.example.study.mapper.Transaction2FieldSetMapper;
 import com.example.study.reader.CustomerFileReader;
 import com.example.study.reader.CustomerFileReader2;
@@ -45,9 +46,9 @@ public class FlatFileItemConfiguration {
     public Job flatFileItemJob() {
         return jobBuilderFactory.get("flatFileItemJob")
                 .incrementer(new RunIdIncrementer())
-//                .start(copyFileStep())
+                .start(copyFileStep())
 //                .start(copyFileStep2())
-                .start(copyFileStep3())
+//                .start(copyFileStep3())
                 .build();
     }
 
@@ -235,10 +236,19 @@ public class FlatFileItemConfiguration {
     public Step copyFileStep() {
         return stepBuilderFactory.get("copyFileStep")
                 .<MyCustomer, MyCustomer>chunk(10)
-//                .reader(customerFlatFileItemReaderByFixedLength(null))
-                .reader(customerFlatFileItemReaderByDelimit(null))
+                .reader(customerFlatFileItemReaderByFixedLength(null))
+//                .reader(customerFlatFileItemReaderByDelimit(null))
                 .writer(customerFlatFileItemWriter())
+                .faultTolerant()
+                .skipLimit(100)
+                .skip(Exception.class)
+                .listener(myCustomerItemListener())
                 .build();
+    }
+
+    @Bean
+    public MyCustomerItemListener myCustomerItemListener() {
+        return new MyCustomerItemListener();
     }
 
     @Bean
