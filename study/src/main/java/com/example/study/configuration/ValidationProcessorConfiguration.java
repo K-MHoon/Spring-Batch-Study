@@ -2,6 +2,7 @@ package com.example.study.configuration;
 
 import com.example.study.dto.MyCustomer;
 import com.example.study.dto.MyCustomer2;
+import com.example.study.validator.UniqueLastNameValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -12,6 +13,7 @@ import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
 import org.springframework.batch.item.validator.BeanValidatingItemProcessor;
+import org.springframework.batch.item.validator.ValidatingItemProcessor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,7 +29,7 @@ public class ValidationProcessorConfiguration {
     @Bean
     public Job validationJob() {
         return jobBuilderFactory.get("validationJob")
-                .incrementer(new RunIdIncrementer())
+//                .incrementer(new RunIdIncrementer())
                 .start(validationStep())
                 .build();
     }
@@ -41,12 +43,25 @@ public class ValidationProcessorConfiguration {
                 .writer(items -> {
                     items.forEach(System.out::println);
                 })
+                .stream(uniqueLastNameValidator())
                 .build();
     }
 
+//    @Bean
+//    public BeanValidatingItemProcessor<MyCustomer2> validationItemProcessor() {
+//        return new BeanValidatingItemProcessor<>();
+//    }
+
     @Bean
-    public BeanValidatingItemProcessor<MyCustomer2> validationItemProcessor() {
-        return new BeanValidatingItemProcessor<>();
+    public UniqueLastNameValidator uniqueLastNameValidator() {
+        UniqueLastNameValidator uniqueLastNameValidator = new UniqueLastNameValidator();
+        uniqueLastNameValidator.setName("validator");
+        return uniqueLastNameValidator;
+    }
+
+    @Bean
+    public ValidatingItemProcessor<MyCustomer2> validationItemProcessor() {
+        return new ValidatingItemProcessor<>(uniqueLastNameValidator());
     }
 
     @Bean
