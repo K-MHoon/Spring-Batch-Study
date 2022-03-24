@@ -11,9 +11,11 @@ import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.adapter.ItemProcessorAdapter;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
+import org.springframework.batch.item.support.ScriptItemProcessor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 
 @RequiredArgsConstructor
@@ -36,7 +38,8 @@ public class ItemAdapterConfiguration {
         return stepBuilderFactory.get("itemAdapterStep")
                 .<MyCustomer2, MyCustomer2>chunk(5)
                 .reader(itemAdapterReader(null))
-                .processor(itemAdapterProcessor())
+//                .processor(itemAdapterProcessor())
+                .processor(itemScriptProcessor(null))
                 .writer(items -> items.forEach(System.out::println))
                 .build();
     }
@@ -47,6 +50,16 @@ public class ItemAdapterConfiguration {
         adapter.setTargetObject(service);
         adapter.setTargetMethod("upperCase");
         return adapter;
+    }
+
+    @Bean
+    @StepScope
+    public ScriptItemProcessor<MyCustomer2, MyCustomer2> itemScriptProcessor(
+            @Value("#{jobParameters['script']}") ClassPathResource script
+    ) {
+            ScriptItemProcessor<MyCustomer2, MyCustomer2> itemProcessor = new ScriptItemProcessor<>();
+            itemProcessor.setScript(script);
+            return itemProcessor;
     }
 
     @Bean
