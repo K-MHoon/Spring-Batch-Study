@@ -1,4 +1,4 @@
-item.setFirstName(item.getFirstName().toUpperCase());
-item.setMiddleInitial(item.getMiddleInitial().toUpperCase());
-item.setLastName(item.getLastName().toUpperCase());
+item.setAddress(item.getAddress().toLowerCase());
+item.setCity(item.getCity().toLowerCase());
+item.setState(item.getState().toLowerCase());
 item;
