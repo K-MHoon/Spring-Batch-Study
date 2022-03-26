@@ -13,12 +13,18 @@ import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.FlatFileItemWriter;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
 import org.springframework.batch.item.file.builder.FlatFileItemWriterBuilder;
+import org.springframework.batch.item.xml.StaxEventItemWriter;
+import org.springframework.batch.item.xml.builder.StaxEventItemWriterBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.oxm.xstream.XStreamMarshaller;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @RequiredArgsConstructor
 @Configuration
@@ -40,7 +46,8 @@ public class FlatFileWriterConfiguration {
         return stepBuilderFactory.get("flatFileWriterStep")
                 .<WriteCustomer, WriteCustomer>chunk(5)
                 .reader(flatFileItemReaderWriteCustomer(null))
-                .writer(flatFileItemWriterByFormat(null))
+//                .writer(flatFileItemWriterByFormat(null))
+                .writer(staxFileItemWriterToWriteCustomer(null))
                 .build();
     }
 
@@ -72,4 +79,23 @@ public class FlatFileWriterConfiguration {
                 .build();
     }
 
+    @Bean
+    @StepScope
+    public StaxEventItemWriter<WriteCustomer> staxFileItemWriterToWriteCustomer(
+            @Value("#{jobParameters['outputFile']}") FileSystemResource outputFile) {
+
+        Map<String, Class> aliases = new HashMap<>();
+        aliases.put("customer", WriteCustomer.class);
+
+        XStreamMarshaller marshaller = new XStreamMarshaller();
+        marshaller.setAliases(aliases);
+        marshaller.afterPropertiesSet();
+
+        return new StaxEventItemWriterBuilder<WriteCustomer>()
+                .name("staxFileItemWriterToWriteCustomer")
+                .resource(outputFile)
+                .marshaller(marshaller)
+                .rootTagName("customers")
+                .build();
+    }
 }
