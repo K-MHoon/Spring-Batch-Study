@@ -2,10 +2,17 @@ package com.example.study.dto;
 
 import lombok.Data;
 
+import javax.persistence.*;
+import java.io.Serializable;
+
 @Data
-public class WriteCustomer {
+@Entity
+@Table(name = "tbl_customer")
+public class WriteCustomer implements Serializable {
     private static final long serialVersionUID = 1L;
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String firstName;
     private String middleInitial;
