@@ -41,7 +41,7 @@ public class DatabaseWriterConfiguration {
         return stepBuilderFactory.get("databaseWriterStep")
                 .<WriteCustomer, WriteCustomer>chunk(5)
                 .reader(databaseWriterReaderByJdbc(null))
-                .writer(databaseWriterByJdbc())
+                .writer(databaseWriterByNamedParameter())
                 .build();
     }
 
@@ -71,6 +71,27 @@ public class DatabaseWriterConfiguration {
                         "state, " +
                         "zipCode) VALUES (?,?,?,?,?,?,?)")
                 .itemPreparedStatementSetter(new CustomerItemPreparedStatementSetter())
+                .build();
+    }
+
+    @Bean
+    public JdbcBatchItemWriter<WriteCustomer> databaseWriterByNamedParameter() {
+        return new JdbcBatchItemWriterBuilder<WriteCustomer>()
+                .dataSource(dataSource)
+                .sql("insert into tbl_customer (firstName, " +
+                        "middleInitial, " +
+                        "lastName, " +
+                        "address, " +
+                        "city, " +
+                        "state, " +
+                        "zipCode) VALUES (:firstName, " +
+                        ":middleInitial, " +
+                        ":lastName, " +
+                        ":address, " +
+                        ":city, " +
+                        ":state, " +
+                        ":zipCode)")
+                .beanMapped()
                 .build();
     }
 }
