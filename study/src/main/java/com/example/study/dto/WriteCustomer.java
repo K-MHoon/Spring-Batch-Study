@@ -13,5 +13,5 @@ public class WriteCustomer {
     private String address;
     private String city;
     private String state;
-    private String zip;
+    private String zipCode;
 }
