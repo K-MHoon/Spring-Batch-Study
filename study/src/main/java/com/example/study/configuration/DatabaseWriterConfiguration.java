@@ -3,6 +3,7 @@ package com.example.study.configuration;
 import com.example.study.configurer.HibernateBatchConfigurer;
 import com.example.study.dto.WriteCustomer;
 import com.example.study.dto.WriteCustomerByMongo;
+import com.example.study.repository.WriteCustomerRepository;
 import com.example.study.setter.CustomerItemPreparedStatementSetter;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.SessionFactory;
@@ -13,7 +14,9 @@ import org.springframework.batch.core.configuration.annotation.StepBuilderFactor
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.data.MongoItemWriter;
+import org.springframework.batch.item.data.RepositoryItemWriter;
 import org.springframework.batch.item.data.builder.MongoItemWriterBuilder;
+import org.springframework.batch.item.data.builder.RepositoryItemWriterBuilder;
 import org.springframework.batch.item.database.HibernateItemWriter;
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
 import org.springframework.batch.item.database.JpaItemWriter;
@@ -43,6 +46,7 @@ public class DatabaseWriterConfiguration {
     private final DataSource dataSource;
     private final EntityManagerFactory entityManagerFactory;
     private final MongoOperations mongoOperations;
+    private final WriteCustomerRepository writeCustomerRepository;
 
     @Bean
     public Job databaseWriterJob() {
@@ -55,9 +59,9 @@ public class DatabaseWriterConfiguration {
     @Bean
     public Step databaseWriterStep() {
         return stepBuilderFactory.get("databaseWriterStep")
-                .<WriteCustomer, WriteCustomerByMongo>chunk(5)
+                .<WriteCustomer, WriteCustomer>chunk(5)
                 .reader(databaseWriterReaderByJdbc(null))
-                .writer(databaseWriterByMongoDB())
+                .writer(databaseWriterByJpaRepository())
                 .build();
     }
 
@@ -87,6 +91,14 @@ public class DatabaseWriterConfiguration {
                         "state, " +
                         "zipCode) VALUES (?,?,?,?,?,?,?)")
                 .itemPreparedStatementSetter(new CustomerItemPreparedStatementSetter())
+                .build();
+    }
+
+    @Bean
+    public RepositoryItemWriter<WriteCustomer> databaseWriterByJpaRepository() {
+        return new RepositoryItemWriterBuilder<WriteCustomer>()
+                .repository(writeCustomerRepository)
+                .methodName("save")
                 .build();
     }
 
