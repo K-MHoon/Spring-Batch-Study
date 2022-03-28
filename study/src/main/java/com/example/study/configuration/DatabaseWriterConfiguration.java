@@ -13,8 +13,10 @@ import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.database.HibernateItemWriter;
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
+import org.springframework.batch.item.database.JpaItemWriter;
 import org.springframework.batch.item.database.builder.HibernateItemWriterBuilder;
 import org.springframework.batch.item.database.builder.JdbcBatchItemWriterBuilder;
+import org.springframework.batch.item.database.builder.JpaItemWriterBuilder;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
 import org.springframework.beans.factory.annotation.Value;
@@ -50,7 +52,7 @@ public class DatabaseWriterConfiguration {
         return stepBuilderFactory.get("databaseWriterStep")
                 .<WriteCustomer, WriteCustomer>chunk(5)
                 .reader(databaseWriterReaderByJdbc(null))
-                .writer(databaseWriterHibernateItemWriter())
+                .writer(databaseWriterByJpa())
                 .build();
     }
 
@@ -87,6 +89,13 @@ public class DatabaseWriterConfiguration {
     public HibernateItemWriter<WriteCustomer> databaseWriterHibernateItemWriter() {
         return new HibernateItemWriterBuilder<WriteCustomer>()
                 .sessionFactory(entityManagerFactory.unwrap(SessionFactory.class))
+                .build();
+    }
+
+    @Bean
+    public JpaItemWriter<WriteCustomer> databaseWriterByJpa() {
+        return new JpaItemWriterBuilder<WriteCustomer>()
+                .entityManagerFactory(entityManagerFactory)
                 .build();
     }
 
