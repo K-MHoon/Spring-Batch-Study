@@ -2,6 +2,7 @@ package com.example.study.configuration;
 
 import com.example.study.configurer.HibernateBatchConfigurer;
 import com.example.study.dto.WriteCustomer;
+import com.example.study.dto.WriteCustomerByMongo;
 import com.example.study.setter.CustomerItemPreparedStatementSetter;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.SessionFactory;
@@ -11,6 +12,8 @@ import org.springframework.batch.core.configuration.annotation.JobBuilderFactory
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.item.data.MongoItemWriter;
+import org.springframework.batch.item.data.builder.MongoItemWriterBuilder;
 import org.springframework.batch.item.database.HibernateItemWriter;
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
 import org.springframework.batch.item.database.JpaItemWriter;
@@ -24,6 +27,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.orm.hibernate5.HibernateTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -38,6 +42,7 @@ public class DatabaseWriterConfiguration {
     private final StepBuilderFactory stepBuilderFactory;
     private final DataSource dataSource;
     private final EntityManagerFactory entityManagerFactory;
+    private final MongoOperations mongoOperations;
 
     @Bean
     public Job databaseWriterJob() {
@@ -50,9 +55,9 @@ public class DatabaseWriterConfiguration {
     @Bean
     public Step databaseWriterStep() {
         return stepBuilderFactory.get("databaseWriterStep")
-                .<WriteCustomer, WriteCustomer>chunk(5)
+                .<WriteCustomer, WriteCustomerByMongo>chunk(5)
                 .reader(databaseWriterReaderByJdbc(null))
-                .writer(databaseWriterByJpa())
+                .writer(databaseWriterByMongoDB())
                 .build();
     }
 
@@ -96,6 +101,14 @@ public class DatabaseWriterConfiguration {
     public JpaItemWriter<WriteCustomer> databaseWriterByJpa() {
         return new JpaItemWriterBuilder<WriteCustomer>()
                 .entityManagerFactory(entityManagerFactory)
+                .build();
+    }
+
+    @Bean
+    public MongoItemWriter<WriteCustomerByMongo> databaseWriterByMongoDB() {
+        return new MongoItemWriterBuilder<WriteCustomerByMongo>()
+                .collection("customers")
+                .template(mongoOperations)
                 .build();
     }
 
