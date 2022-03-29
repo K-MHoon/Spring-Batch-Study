@@ -4,6 +4,7 @@ import com.example.study.configurer.HibernateBatchConfigurer;
 import com.example.study.dto.WriteCustomer;
 import com.example.study.dto.WriteCustomerByMongo;
 import com.example.study.repository.WriteCustomerRepository;
+import com.example.study.service.WriteCustomerService;
 import com.example.study.setter.CustomerItemPreparedStatementSetter;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.SessionFactory;
@@ -13,6 +14,7 @@ import org.springframework.batch.core.configuration.annotation.JobBuilderFactory
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.item.adapter.ItemWriterAdapter;
 import org.springframework.batch.item.data.MongoItemWriter;
 import org.springframework.batch.item.data.RepositoryItemWriter;
 import org.springframework.batch.item.data.builder.MongoItemWriterBuilder;
@@ -61,7 +63,7 @@ public class DatabaseWriterConfiguration {
         return stepBuilderFactory.get("databaseWriterStep")
                 .<WriteCustomer, WriteCustomer>chunk(5)
                 .reader(databaseWriterReaderByJdbc(null))
-                .writer(databaseWriterByJpaRepository())
+                .writer(databaseWriterByAdapter(null))
                 .build();
     }
 
@@ -122,6 +124,16 @@ public class DatabaseWriterConfiguration {
                 .collection("customers")
                 .template(mongoOperations)
                 .build();
+    }
+
+    @Bean
+    public ItemWriterAdapter<WriteCustomer> databaseWriterByAdapter(WriteCustomerService writeCustomerService) {
+        ItemWriterAdapter<WriteCustomer> itemWriterAdapter = new ItemWriterAdapter<>();
+
+        itemWriterAdapter.setTargetObject(writeCustomerService);
+        itemWriterAdapter.setTargetMethod("logCustomer");
+
+        return itemWriterAdapter;
     }
 
     @Bean
