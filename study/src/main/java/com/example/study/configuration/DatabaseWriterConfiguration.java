@@ -15,6 +15,7 @@ import org.springframework.batch.core.configuration.annotation.StepBuilderFactor
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.adapter.ItemWriterAdapter;
+import org.springframework.batch.item.adapter.PropertyExtractingDelegatingItemWriter;
 import org.springframework.batch.item.data.MongoItemWriter;
 import org.springframework.batch.item.data.RepositoryItemWriter;
 import org.springframework.batch.item.data.builder.MongoItemWriterBuilder;
@@ -63,7 +64,7 @@ public class DatabaseWriterConfiguration {
         return stepBuilderFactory.get("databaseWriterStep")
                 .<WriteCustomer, WriteCustomer>chunk(5)
                 .reader(databaseWriterReaderByJdbc(null))
-                .writer(databaseWriterByAdapter(null))
+                .writer(databaseWriterByPropertyExtractingDelegating(null))
                 .build();
     }
 
@@ -134,6 +135,19 @@ public class DatabaseWriterConfiguration {
         itemWriterAdapter.setTargetMethod("logCustomer");
 
         return itemWriterAdapter;
+    }
+
+    @Bean
+    public PropertyExtractingDelegatingItemWriter<WriteCustomer> databaseWriterByPropertyExtractingDelegating(WriteCustomerService writeCustomerService) {
+        PropertyExtractingDelegatingItemWriter<WriteCustomer> itemWriter = new PropertyExtractingDelegatingItemWriter<>();
+
+        itemWriter.setTargetObject(writeCustomerService);
+        itemWriter.setTargetMethod("logCustomerAddress");
+        itemWriter.setFieldsUsedAsTargetMethodArguments(new String[] {
+                "address", "city", "state", "zipCode"
+        });
+
+        return itemWriter;
     }
 
     @Bean
