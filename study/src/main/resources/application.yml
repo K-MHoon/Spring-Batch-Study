@@ -19,6 +19,9 @@ spring:
 
 ---
 spring:
+  activemq:
+    packages:
+      trust-all: true
   config:
     activate:
       on-profile: mysql
