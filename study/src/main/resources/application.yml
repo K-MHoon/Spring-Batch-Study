@@ -54,6 +54,18 @@ spring:
     properties:
       hibernate.format_sql: true
       hibernate.current_session_context_class: org.springframework.orm.hibernate5.SpringSessionContext
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username:
+    password:
+    properties:
+      mail:
+        smtp:
+          auth: true
+          timeout: 5000
+          starttls:
+            enable: true
 
 server:
   port: 0
