@@ -3,6 +3,7 @@ package com.example.study.configuration;
 import com.example.study.dto.EmailCustomer;
 import com.example.study.dto.MyCustomer5;
 import com.example.study.dto.MyCustomer5;
+import com.example.study.suffix.CustomerOutputFileSuffixCreator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -62,13 +63,16 @@ public class MultiResourceItemConfiguration {
     }
 
     @Bean
-    public MultiResourceItemWriter<MyCustomer5> multiCustomerFileWriter() {
+    public MultiResourceItemWriter<MyCustomer5> multiCustomerFileWriter(
+            CustomerOutputFileSuffixCreator suffixCreator
+    ) {
 
         return new MultiResourceItemWriterBuilder<MyCustomer5>()
                 .name("multiCustomerFileWriter")
                 .delegate(multiResourceItemWriterToMyCustomer5())
                 .itemCountLimitPerResource(100)
                 .resource(new FileSystemResource("study/src/main/resources/output/multiFile/customer"))
+                .resourceSuffixCreator(suffixCreator)
                 .build();
     }
 
@@ -77,7 +81,7 @@ public class MultiResourceItemConfiguration {
         return stepBuilderFactory.get("multiXmlGeneratorStep")
                 .<MyCustomer5, MyCustomer5>chunk(100)
                 .reader(multiResourceItemJdbcCursorItemReader(null))
-                .writer(multiCustomerFileWriter())
+                .writer(multiCustomerFileWriter(null))
                 .build();
     }
 
