@@ -1,5 +1,6 @@
 package com.example.study.configuration;
 
+import com.example.study.callback.CustomerXmlHeaderCallback;
 import com.example.study.dto.MyCustomer;
 import com.example.study.dto.WriteCustomer;
 import lombok.RequiredArgsConstructor;
@@ -18,9 +19,7 @@ import org.springframework.batch.item.xml.builder.StaxEventItemWriterBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
 import org.springframework.oxm.xstream.XStreamMarshaller;
 
 import java.util.HashMap;
@@ -32,6 +31,7 @@ public class FlatFileWriterConfiguration {
 
     private final JobBuilderFactory jobBuilderFactory;
     private final StepBuilderFactory stepBuilderFactory;
+    private final CustomerXmlHeaderCallback headerCallback;
 
     @Bean
     public Job flatFileWriterJob() {
@@ -59,7 +59,7 @@ public class FlatFileWriterConfiguration {
                 .name("flatFileItemReaderWriteCustomer")
                 .delimited()
                 .names("firstName", "middleInitial", "lastName",
-                        "address", "city", "state", "zip")
+                        "address", "city", "state", "zipCode")
                 .targetType(WriteCustomer.class)
                 .resource(inputFile)
                 .build();
@@ -96,6 +96,7 @@ public class FlatFileWriterConfiguration {
                 .resource(outputFile)
                 .marshaller(marshaller)
                 .rootTagName("customers")
+                .headerCallback(headerCallback)
                 .build();
     }
 }
