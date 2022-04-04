@@ -7,6 +7,7 @@
         <module>apiService</module>
         <module>demo</module>
         <module>study</module>
+        <module>bankTransaction</module>
     </modules>
     <parent>
         <groupId>org.springframework.boot</groupId>
