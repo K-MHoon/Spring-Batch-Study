@@ -1,5 +1,6 @@
 package com.example.study.configuration;
 
+import com.example.study.classifier.CustomerClassifier;
 import com.example.study.dto.EmailCustomer;
 import com.example.study.dto.WriteCustomer;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +14,9 @@ import org.springframework.batch.item.database.JdbcBatchItemWriter;
 import org.springframework.batch.item.database.builder.JdbcBatchItemWriterBuilder;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
+import org.springframework.batch.item.support.ClassifierCompositeItemWriter;
 import org.springframework.batch.item.support.CompositeItemWriter;
+import org.springframework.batch.item.support.builder.ClassifierCompositeItemWriterBuilder;
 import org.springframework.batch.item.support.builder.CompositeItemWriterBuilder;
 import org.springframework.batch.item.xml.StaxEventItemWriter;
 import org.springframework.batch.item.xml.builder.StaxEventItemWriterBuilder;
@@ -50,7 +53,9 @@ public class CompositeItemConfiguration {
         return stepBuilderFactory.get("compositeWriterStep")
                 .<EmailCustomer, EmailCustomer>chunk(10)
                 .reader(compositeFlatFileItemReader(null))
-                .writer(compositeItemWriter())
+//                .writer(compositeItemWriter())
+                .writer(classifierCompositeItemWriter())
+                .stream(compositeStaxFileItemWriter(null))
                 .build();
     }
 
@@ -85,6 +90,15 @@ public class CompositeItemConfiguration {
                         "address, city, state, zip, email) " +
                         "VALUES(:firstName, :middleInitial, :lastName, :address, :city, :state, :zip, :email)")
                 .beanMapped()
+                .build();
+    }
+
+    @Bean
+    public ClassifierCompositeItemWriter<EmailCustomer> classifierCompositeItemWriter() {
+        CustomerClassifier classifier = new CustomerClassifier(compositeStaxFileItemWriter(null), compositeJdbcBatchItemWriter(null));
+
+        return new ClassifierCompositeItemWriterBuilder<EmailCustomer>()
+                .classifier(classifier)
                 .build();
     }
 
