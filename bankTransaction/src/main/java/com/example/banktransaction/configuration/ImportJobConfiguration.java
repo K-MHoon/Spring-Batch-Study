@@ -1,5 +1,6 @@
 package com.example.banktransaction.configuration;
 
+import com.example.banktransaction.classifier.CustomerUpdateClassifier;
 import com.example.banktransaction.validator.CustomerItemValidator;
 import com.example.banktransaction.vo.CustomerAddressUpdate;
 import com.example.banktransaction.vo.CustomerContactUpdate;
@@ -13,12 +14,16 @@ import org.springframework.batch.core.configuration.annotation.StepBuilderFactor
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
+import org.springframework.batch.item.ItemWriter;
+import org.springframework.batch.item.database.JdbcBatchItemWriter;
+import org.springframework.batch.item.database.builder.JdbcBatchItemWriterBuilder;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
 import org.springframework.batch.item.file.mapping.FieldSetMapper;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.batch.item.file.transform.LineTokenizer;
 import org.springframework.batch.item.file.transform.PatternMatchingCompositeLineTokenizer;
+import org.springframework.batch.item.support.ClassifierCompositeItemWriter;
 import org.springframework.batch.item.validator.ValidatingItemProcessor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -26,6 +31,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.util.StringUtils;
 
+import javax.sql.DataSource;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,7 +43,7 @@ public class ImportJobConfiguration {
     private final StepBuilderFactory stepBuilderFactory;
 
     @Bean
-    public Job importJob() {
+    public Job importJob() throws Exception {
         return jobBuilderFactory.get("importJob")
                 .start(importCustomerUpdates())
                 .build();
@@ -54,11 +60,65 @@ public class ImportJobConfiguration {
     }
 
     @Bean
+    public ItemWriter customerUpdateItemWriter() {
+        CustomerUpdateClassifier classifier = new CustomerUpdateClassifier(customerNameUpdateItemWriter(null),
+                customerAddressUpdateItemWriter(null),
+                customerContactUpdateItemWriter(null));
+
+        ClassifierCompositeItemWriter<CustomerUpdate> compositeItemWriter = new ClassifierCompositeItemWriter<>();
+        compositeItemWriter.setClassifier(classifier);
+        return compositeItemWriter;
+    }
+
+    @Bean
     public ValidatingItemProcessor customerValidatingItemProcessor(CustomerItemValidator validator) {
         ValidatingItemProcessor<CustomerUpdate> customerUpdateValidatingItemProcessor
                 = new ValidatingItemProcessor<>(validator);
         customerUpdateValidatingItemProcessor.setFilter(true);
         return customerUpdateValidatingItemProcessor;
+    }
+
+    @Bean
+    public JdbcBatchItemWriter<CustomerUpdate> customerNameUpdateItemWriter(DataSource dataSource) {
+        return new JdbcBatchItemWriterBuilder<CustomerUpdate>()
+                .beanMapped()
+                .sql("update bank_customer set " +
+                        "first_name = COALESCE(:firstName, first_name), " +
+                        "middle_name = COALESCE(:middleName, middle_name), " +
+                        "last_name = COALESCE(:lastName, last_name) " +
+                        "where customer_id = :customerId")
+                .dataSource(dataSource)
+                .build();
+    }
+
+    @Bean
+    public JdbcBatchItemWriter<CustomerUpdate> customerAddressUpdateItemWriter(DataSource dataSource) {
+        return new JdbcBatchItemWriterBuilder<CustomerUpdate>()
+                .beanMapped()
+                .sql("update bank_customer set " +
+                        "address1 = COALESCE(:address1, address1), " +
+                        "address2 = COALESCE(:address2, address2), " +
+                        "city = COALESCE(:city, city), " +
+                        "state = COALESCE(:state, state), " +
+                        "postal_code = COALESCE(:postalCode, postal_code) " +
+                        "where customer_id = :customerId")
+                .dataSource(dataSource)
+                .build();
+    }
+
+    @Bean
+    public JdbcBatchItemWriter<CustomerUpdate> customerContactUpdateItemWriter(DataSource dataSource) {
+        return new JdbcBatchItemWriterBuilder<CustomerUpdate>()
+                .beanMapped()
+                .sql("update bank_customer set " +
+                        "email_address = COALESCE(:emailAddress, email_address), " +
+                        "home_phone = COALESCE(:homePhone, home_phone), " +
+                        "cell_phone = COALESCE(:cellPhone, cell_phone), " +
+                        "work_phone = COALESCE(:workPhone, work_phone), " +
+                        "notification_pref = COALESCE(:notificationPreferences, notification_pref) " +
+                        "where customer_id = :customerId")
+                .dataSource(dataSource)
+                .build();
     }
 
     @Bean
