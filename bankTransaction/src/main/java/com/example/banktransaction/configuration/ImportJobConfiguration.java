@@ -1,5 +1,6 @@
 package com.example.banktransaction.configuration;
 
+import com.example.banktransaction.validator.CustomerItemValidator;
 import com.example.banktransaction.vo.CustomerAddressUpdate;
 import com.example.banktransaction.vo.CustomerContactUpdate;
 import com.example.banktransaction.vo.CustomerNameUpdate;
@@ -10,6 +11,7 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepScope;
+import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
@@ -17,6 +19,7 @@ import org.springframework.batch.item.file.mapping.FieldSetMapper;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.batch.item.file.transform.LineTokenizer;
 import org.springframework.batch.item.file.transform.PatternMatchingCompositeLineTokenizer;
+import org.springframework.batch.item.validator.ValidatingItemProcessor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -41,13 +44,21 @@ public class ImportJobConfiguration {
     }
 
     @Bean
-    public Step importCustomerUpdates() {
+    public Step importCustomerUpdates() throws Exception {
         return stepBuilderFactory.get("importCustomerUpdates")
                 .<CustomerUpdate, CustomerUpdate>chunk(100)
                 .reader(customerUpdateItemReader(null))
                 .processor(customerValidatingItemProcessor(null))
                 .writer(customerUpdateItemWriter())
                 .build();
+    }
+
+    @Bean
+    public ValidatingItemProcessor customerValidatingItemProcessor(CustomerItemValidator validator) {
+        ValidatingItemProcessor<CustomerUpdate> customerUpdateValidatingItemProcessor
+                = new ValidatingItemProcessor<>(validator);
+        customerUpdateValidatingItemProcessor.setFilter(true);
+        return customerUpdateValidatingItemProcessor;
     }
 
     @Bean
