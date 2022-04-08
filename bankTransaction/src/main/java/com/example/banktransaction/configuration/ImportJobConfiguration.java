@@ -9,11 +9,14 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepScope;
+import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
+import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.batch.item.database.builder.JdbcBatchItemWriterBuilder;
+import org.springframework.batch.item.database.builder.JdbcCursorItemReaderBuilder;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
 import org.springframework.batch.item.file.mapping.FieldSetMapper;
@@ -45,8 +48,10 @@ public class ImportJobConfiguration {
     @Bean
     public Job importJob() throws Exception {
         return jobBuilderFactory.get("importJob")
+                .incrementer(new RunIdIncrementer())
                 .start(importCustomerUpdates())
                 .next(importTransactions())
+                .next(applyTransactions())
                 .build();
     }
 
@@ -102,6 +107,53 @@ public class ImportJobConfiguration {
                 .beanMapped()
                 .build();
     }
+
+    @Bean
+    public Step applyTransactions() {
+        return stepBuilderFactory.get("applyTransactions")
+                .<Transaction, Transaction>chunk(100)
+                .reader(applyTransactionReader(null))
+                .writer(applyTransactionWriter(null))
+                .build();
+    }
+
+    @Bean
+    public JdbcBatchItemWriter applyTransactionWriter(DataSource dataSource) {
+        return new JdbcBatchItemWriterBuilder<Transaction>()
+                .dataSource(dataSource)
+                .sql("UPDATE ACCOUNT SET " +
+                        "BALANCE = BALANCE + :transactionAmount " +
+                        "WHERE ACCOUNT_ID = :accountId")
+                .beanMapped()
+                .assertUpdates(false)
+                .build();
+    }
+
+    @Bean
+    public JdbcCursorItemReader applyTransactionReader(DataSource dataSource) {
+        return new JdbcCursorItemReaderBuilder<Transaction>()
+                .name("applyTransactionReader")
+                .dataSource(dataSource)
+                .sql("select transaction_id, " +
+                        "account_account_id, " +
+                        "description, " +
+                        "credit, " +
+                        "debit, " +
+                        "timestamp " +
+                        "from transaction " +
+                        "order by timestamp")
+                .rowMapper((resultSet, i) -> new Transaction(
+                        resultSet.getLong("transaction_id"),
+                        resultSet.getLong("account_account_id"),
+                        resultSet.getString("description"),
+                        resultSet.getBigDecimal("credit"),
+                        resultSet.getBigDecimal("debit"),
+                        resultSet.getTimestamp("timestamp")))
+                .build();
+    }
+
+
+
 
     @Bean
     public ItemWriter customerUpdateItemWriter() {
