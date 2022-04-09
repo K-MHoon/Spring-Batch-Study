@@ -1,6 +1,7 @@
 package com.example.banktransaction.configuration;
 
 import com.example.banktransaction.classifier.CustomerUpdateClassifier;
+import com.example.banktransaction.processor.AccountItemProcessor;
 import com.example.banktransaction.validator.CustomerItemValidator;
 import com.example.banktransaction.vo.*;
 import lombok.RequiredArgsConstructor;

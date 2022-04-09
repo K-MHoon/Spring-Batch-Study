@@ -1,6 +1,7 @@
 package com.example.banktransaction.vo;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -25,5 +26,9 @@ public class Account {
         this.id = id;
         this.balance = balance;
         this.lastStatementDate = lastStatementDate;
+    }
+
+    public void addTransaction(Transaction transaction) {
+        transactions.add(transaction);
     }
 }
