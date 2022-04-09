@@ -130,6 +130,46 @@ public class ImportJobConfiguration {
     }
 
     @Bean
+    public Step generateStatements(AccountItemProcessor itemProcessor) {
+        return stepBuilderFactory.get("generateStatements")
+                .<Statement, Statement>chunk(1)
+                .reader(statementItemReader(null))
+                .processor(itemProcessor)
+                .writer(statementItemWriter(null))
+                .build();
+    }
+
+    @Bean
+    public JdbcCursorItemReader statementItemReader(DataSource dataSource) {
+        return new JdbcCursorItemReaderBuilder<Statement>()
+                .name("statementItemReader")
+                .dataSource(dataSource)
+                .sql("SELECT * FROM BANK_CUSTOMER")
+                .rowMapper((resultSet, i) -> {
+                    Customer customer = Customer.builder()
+                            .id(resultSet.getLong("customer_id"))
+                            .firstName(resultSet.getString("first_name"))
+                            .middleName(resultSet.getString("middle_name"))
+                            .lastName(resultSet.getString("last_name"))
+                            .address1(resultSet.getString("address1"))
+                            .address2(resultSet.getString("address2"))
+                            .city(resultSet.getString("city"))
+                            .state(resultSet.getString("state"))
+                            .postalCode(resultSet.getString("postal_code"))
+                            .ssn(resultSet.getString("ssn"))
+                            .emailAddress(resultSet.getString("email_address"))
+                            .homePhone(resultSet.getString("home_phone"))
+                            .cellPhone(resultSet.getString("cell_phone"))
+                            .workPhone(resultSet.getString("work_phone"))
+                            .notificationPreferences(resultSet.getInt("notification_pref"))
+                            .build();
+                    return new Statement(customer);
+                })
+                .build();
+    }
+
+
+    @Bean
     public JdbcCursorItemReader applyTransactionReader(DataSource dataSource) {
         return new JdbcCursorItemReaderBuilder<Transaction>()
                 .name("applyTransactionReader")

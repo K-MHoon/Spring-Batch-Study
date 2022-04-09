@@ -20,4 +20,8 @@ public class Statement {
         this.customer = customer;
         this.accounts.addAll(accounts);
     }
+
+    public Statement(Customer customer) {
+        this.customer = customer;
+    }
 }

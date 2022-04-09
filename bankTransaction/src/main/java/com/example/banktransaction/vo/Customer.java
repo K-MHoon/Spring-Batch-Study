@@ -1,15 +1,16 @@
 package com.example.banktransaction.vo;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
 /**
  * 고객
  */
-@AllArgsConstructor
 @Getter
 @Setter
+@Builder
 public class Customer {
 
     private final Long id;
