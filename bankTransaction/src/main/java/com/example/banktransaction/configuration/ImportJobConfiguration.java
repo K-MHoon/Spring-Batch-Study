@@ -1,6 +1,8 @@
 package com.example.banktransaction.configuration;
 
+import com.example.banktransaction.aggregator.StatementLineAggregator;
 import com.example.banktransaction.classifier.CustomerUpdateClassifier;
+import com.example.banktransaction.header.StatementHeaderCallback;
 import com.example.banktransaction.processor.AccountItemProcessor;
 import com.example.banktransaction.validator.CustomerItemValidator;
 import com.example.banktransaction.vo.*;
@@ -19,7 +21,12 @@ import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.batch.item.database.builder.JdbcBatchItemWriterBuilder;
 import org.springframework.batch.item.database.builder.JdbcCursorItemReaderBuilder;
 import org.springframework.batch.item.file.FlatFileItemReader;
+import org.springframework.batch.item.file.FlatFileItemWriter;
+import org.springframework.batch.item.file.MultiResourceItemWriter;
+import org.springframework.batch.item.file.ResourceAwareItemWriterItemStream;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
+import org.springframework.batch.item.file.builder.FlatFileItemWriterBuilder;
+import org.springframework.batch.item.file.builder.MultiResourceItemWriterBuilder;
 import org.springframework.batch.item.file.mapping.FieldSetMapper;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.batch.item.file.transform.LineTokenizer;
@@ -32,6 +39,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 import org.springframework.util.StringUtils;
 
@@ -53,6 +61,7 @@ public class ImportJobConfiguration {
                 .start(importCustomerUpdates())
                 .next(importTransactions())
                 .next(applyTransactions())
+                .next(generateStatements(null))
                 .build();
     }
 
@@ -137,6 +146,27 @@ public class ImportJobConfiguration {
                 .reader(statementItemReader(null))
                 .processor(itemProcessor)
                 .writer(statementItemWriter(null))
+                .build();
+    }
+
+    @Bean
+    @StepScope
+    public MultiResourceItemWriter statementItemWriter(
+            @Value("#{jobParameters['outputDirectory']}") FileSystemResource outputDir) {
+        return new MultiResourceItemWriterBuilder<Statement>()
+                .name("statementItemWriter")
+                .resource(outputDir)
+                .itemCountLimitPerResource(1)
+                .delegate(individualStatementItemWriter())
+                .build();
+    }
+
+    @Bean
+    public FlatFileItemWriter individualStatementItemWriter() {
+        return new FlatFileItemWriterBuilder<Statement>()
+                .name("individualStatementItemWriter")
+                .headerCallback(new StatementHeaderCallback())
+                .lineAggregator(new StatementLineAggregator())
                 .build();
     }
 
