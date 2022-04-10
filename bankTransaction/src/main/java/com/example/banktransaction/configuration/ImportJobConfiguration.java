@@ -40,6 +40,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 import org.springframework.util.StringUtils;
 
@@ -81,6 +82,7 @@ public class ImportJobConfiguration {
                 .<Transaction, Transaction>chunk(100)
                 .reader(transactionItemReader(null))
                 .writer(transactionItemWriter(null))
+                .taskExecutor(new SimpleAsyncTaskExecutor())
                 .build();
     }
 
@@ -93,6 +95,7 @@ public class ImportJobConfiguration {
 
         return new StaxEventItemReaderBuilder<Transaction>()
                 .name("fooReader")
+                .saveState(false)
                 .resource(transactionFile)
                 .addFragmentRootElements("transaction")
                 .unmarshaller(unmarshaller)
