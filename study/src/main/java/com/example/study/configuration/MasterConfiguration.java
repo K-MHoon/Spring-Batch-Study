@@ -66,8 +66,8 @@ public class MasterConfiguration {
     }
 
     @Bean
-    public Step masterStep() {
-        return managerStepBuilderFactory.get("masterStep")
+    public Step managerStep() {
+        return managerStepBuilderFactory.get("managerStep")
                 .partitioner("workerStep", workerPartitioner(null))
                 .outputChannel(requests())
                 .inputChannel(replies())
@@ -77,7 +77,7 @@ public class MasterConfiguration {
     @Bean
     public Job remotePartitioningJob() {
         return jobBuilderFactory.get("remotePartitioningJob")
-                .start(masterStep())
+                .start(managerStep())
                 .build();
     }
 }
