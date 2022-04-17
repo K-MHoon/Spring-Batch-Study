@@ -8,6 +8,7 @@
         <module>demo</module>
         <module>study</module>
         <module>bankTransaction</module>
+        <module>partition</module>
     </modules>
     <parent>
         <groupId>org.springframework.boot</groupId>

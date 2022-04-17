@@ -1,0 +1,37 @@
+spring:
+  activemq:
+    packages:
+      trust-all: true
+  data:
+  datasource:
+    hikari:
+      jdbc-url: jdbc:mariadb://localhost:3307/springbatch?useUnicode=true&characterEncoding=utf8
+      username:
+      password:
+      driver-class-name: org.mariadb.jdbc.Driver
+  batch:
+    jdbc:
+      initialize-schema: always # 개발에는 always, 운영에는 never
+    job:
+      names: ${job.name:NONE}
+      enabled: true
+  jpa:
+    hibernate:
+      naming:
+        # 언더스코어 기법이아닌 카멜케이스를 사용하기 때문에 수정해야 한다.
+        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+      ddl-auto: none
+    database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
+    show-sql: true
+    properties:
+      hibernate.format_sql: true
+      hibernate.current_session_context_class: org.springframework.orm.hibernate5.SpringSessionContext
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username:
+    password:
+
+server:
+  port: 0
