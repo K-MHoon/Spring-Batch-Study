@@ -5,6 +5,7 @@ import lombok.Setter;
 
 import javax.persistence.*;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.io.Serializable;
 import java.util.Date;
 
 @Getter
@@ -12,7 +13,7 @@ import java.util.Date;
 @Entity
 @Table(name = "tbl_transaction")
 @XmlRootElement(name = "transaction")
-public class Transaction {
+public class Transaction implements Serializable {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
@@ -26,4 +27,8 @@ public class Transaction {
 
     @Column
     private double amount;
+
+    @ManyToOne
+    @JoinColumn(name = "account_summary_id")
+    private AccountSummary accountSummary;
 }

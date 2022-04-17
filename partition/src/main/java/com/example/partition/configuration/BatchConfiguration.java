@@ -9,7 +9,11 @@ import org.springframework.batch.core.configuration.annotation.JobBuilderFactory
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.step.tasklet.TaskletStep;
 import org.springframework.batch.integration.chunk.RemoteChunkingManagerStepBuilderFactory;
+import org.springframework.batch.integration.chunk.RemoteChunkingWorkerBuilder;
 import org.springframework.batch.integration.config.annotation.EnableBatchIntegration;
+import org.springframework.batch.item.ItemProcessor;
+import org.springframework.batch.item.database.JdbcBatchItemWriter;
+import org.springframework.batch.item.database.builder.JdbcBatchItemWriterBuilder;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,13 +27,15 @@ import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlows;
 
+import javax.sql.DataSource;
+
 @Configuration
 @EnableBatchIntegration
 public class BatchConfiguration {
 
 
     @Configuration
-    @Profile("!worker")
+    @Profile("master")
     @RequiredArgsConstructor
     public static class ManagerConfiguration {
 
@@ -97,5 +103,68 @@ public class BatchConfiguration {
                     .start(masterStep())
                     .build();
         }
+    }
+
+    @Configuration
+    @Profile("worker")
+    @RequiredArgsConstructor
+    public static class WorkerConfiguration {
+
+        private final RemoteChunkingWorkerBuilder<Transaction, Transaction> remoteChunkingWorkerBuilder;
+
+        @Bean
+        public DirectChannel requests() {
+            return new DirectChannel();
+        }
+
+        @Bean
+        public IntegrationFlow outboundFlow(AmqpTemplate amqpTemplate) {
+            return IntegrationFlows.from(replies())
+                    .handle(Amqp.outboundAdapter(amqpTemplate)
+                            .routingKey("replies"))
+                    .get();
+        }
+
+        @Bean
+        public DirectChannel replies() {
+            return new DirectChannel();
+        }
+
+        @Bean
+        public IntegrationFlow inboundFlow(ConnectionFactory connectionFactory) {
+            return IntegrationFlows
+                    .from(Amqp.inboundAdapter(connectionFactory, "requests"))
+                    .channel(requests())
+                    .get();
+        }
+
+        @Bean
+        public IntegrationFlow integrationFlow() {
+            return remoteChunkingWorkerBuilder
+                    .itemProcessor(processor())
+                    .itemWriter(writer(null))
+                    .inputChannel(requests())
+                    .outputChannel(replies())
+                    .build();
+        }
+
+        @Bean
+        public ItemProcessor<Transaction, Transaction> processor() {
+            return item -> {
+                System.out.println("processing transaction = " + item);
+                return item;
+            };
+        }
+
+        @Bean
+        public JdbcBatchItemWriter<Transaction> writer(DataSource dataSource) {
+            return new JdbcBatchItemWriterBuilder<Transaction>()
+                    .dataSource(dataSource)
+                    .beanMapped()
+                    .sql("insert into tbl_transaction (account_number, amount, timestamp) " +
+                            "values (:accountNumber, :amount, :timestamp)")
+                    .build();
+        }
+
     }
 }
