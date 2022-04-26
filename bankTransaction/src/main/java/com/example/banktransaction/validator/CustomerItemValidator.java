@@ -15,11 +15,11 @@ public class CustomerItemValidator implements Validator<CustomerUpdate> {
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
-    private static final String FIND_CUSTOMER =
+    public static final String FIND_CUSTOMER =
             "SELECT COUNT(*) FROM bank_customer WHERE customer_id = :id";
 
-    public CustomerItemValidator(DataSource dataSource) {
-        this.jdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
+    public CustomerItemValidator(NamedParameterJdbcTemplate template) {
+        this.jdbcTemplate = template;
     }
 
     @Override
