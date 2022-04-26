@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.batch.item.validator.ValidationException;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import java.util.Map;
@@ -43,6 +44,25 @@ class CustomerItemValidatorTest {
 
         // then
         assertEquals(5L, (long)parameterMap.getValue().get("id"));
+    }
+
+    @Test
+    public void testInvalidCustomer() {
+        //given
+        CustomerUpdate customer = new CustomerUpdate(5L);
+
+        // when
+        ArgumentCaptor<Map<String, Long>> parameterMap = ArgumentCaptor.forClass(Map.class);
+        when(this.template.queryForObject(eq(CustomerItemValidator.FIND_CUSTOMER),
+                parameterMap.capture(),
+                eq(Long.class)))
+                .thenReturn(0L);
+
+        Throwable exception =
+                assertThrows(ValidationException.class, () -> this.validator.validate(customer));
+
+        // then
+        assertEquals("Bank Customer id 5 was not able to be found", exception.getMessage());
     }
 
 }
