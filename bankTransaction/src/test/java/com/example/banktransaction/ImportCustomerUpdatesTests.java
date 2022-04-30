@@ -1,12 +1,14 @@
 package com.example.banktransaction;
 
 import com.example.banktransaction.configuration.ImportJobConfiguration;
+import com.example.banktransaction.configuration.ImportJobConfigurationTest;
 import com.example.banktransaction.processor.AccountItemProcessor;
 import com.example.banktransaction.validator.CustomerItemValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
@@ -22,7 +24,6 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.batch.runtime.BatchStatus;
 import javax.sql.DataSource;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
@@ -33,7 +34,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @JdbcTest
-@ContextConfiguration(classes = {ImportJobConfiguration.class,
+@ContextConfiguration(classes = {ImportJobConfigurationTest.class,
         CustomerItemValidator.class,
         AccountItemProcessor.class,
         BatchAutoConfiguration.class})
@@ -65,7 +66,7 @@ public class ImportCustomerUpdatesTests {
         assertEquals(BatchStatus.COMPLETED, jobExecution.getStatus());
 
         List<Map<String, String>> results =
-        this.jdbcTemplate.query("select * from customer where customer_id = 5",
+        this.jdbcTemplate.query("select * from bank_customer_test where customer_id = 5",
                 (rs, rowNum) -> {
                     HashMap<String, String> item = new HashMap<>();
                     item.put("customer_id", rs.getString("customer_id"));
